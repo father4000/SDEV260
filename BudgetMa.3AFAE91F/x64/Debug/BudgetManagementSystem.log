@@ -1,0 +1,7 @@
+﻿  uic BudgetManagementSystem.ui
+  moc headers\BudgetManagementSystem.h
+  BudgetManagementSystem.cpp
+  main.cpp
+  qrc_BudgetManagementSystem.cpp
+  moc_BudgetManagementSystem.cpp
+  BudgetManagementSystem.vcxproj -> C:\Users\Bo\source\repos\BudgetManagement\x64\Debug\BudgetManagementSystem.exe

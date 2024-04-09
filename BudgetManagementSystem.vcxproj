@@ -98,11 +98,21 @@
     <QtUic Include="BudgetManagementSystem.ui" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\BudgetItem.cpp" />
     <ClCompile Include="src\BudgetManagementSystem.cpp" />
+    <ClCompile Include="src\Category.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="headers\BudgetManagementSystem.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="headers\Budget.h" />
+    <ClInclude Include="headers\BudgetItem.h" />
+    <ClInclude Include="headers\BudgetManagerAPI.h" />
+    <ClInclude Include="headers\Category.h" />
+    <ClInclude Include="headers\CategoryManager.h" />
+    <ClInclude Include="headers\CategoryManagerAPI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

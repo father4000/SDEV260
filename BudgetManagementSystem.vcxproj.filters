@@ -21,6 +21,9 @@
       <UniqueIdentifier>{639EADAA-A684-42e4-A9AD-28FC9BCB8F7C}</UniqueIdentifier>
       <Extensions>ts</Extensions>
     </Filter>
+    <Filter Include="DB Querys">
+      <UniqueIdentifier>{4b227549-9f0a-46c9-b612-5e6b831bb25c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="BudgetManagementSystem.qrc">
@@ -42,6 +45,9 @@
     </ClCompile>
     <ClCompile Include="src\Category.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataBaseCreation.sql">
+      <Filter>DB Querys</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -68,5 +74,11 @@
     <ClInclude Include="headers\CategoryManagerAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Savings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

@@ -98,6 +98,7 @@
     <QtUic Include="BudgetManagementSystem.ui" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DataBaseCreation.sql" />
     <ClCompile Include="src\BudgetItem.cpp" />
     <ClCompile Include="src\BudgetManagementSystem.cpp" />
     <ClCompile Include="src\Category.cpp" />
@@ -113,6 +114,10 @@
     <ClInclude Include="headers\Category.h" />
     <ClInclude Include="headers\CategoryManager.h" />
     <ClInclude Include="headers\CategoryManagerAPI.h" />
+    <ClInclude Include="Savings.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

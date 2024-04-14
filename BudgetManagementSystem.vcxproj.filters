@@ -49,6 +49,12 @@
     <ClCompile Include="DataBaseCreation.sql">
       <Filter>DB Querys</Filter>
     </ClCompile>
+    <ClCompile Include="InsertCategoryTest.sql">
+      <Filter>DB Querys</Filter>
+    </ClCompile>
+    <ClCompile Include="BudgetClass.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="headers\BudgetManagementSystem.h">
@@ -74,11 +80,23 @@
     <ClInclude Include="headers\CategoryManagerAPI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Savings.h">
+    <ClInclude Include="SavingsClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="InsertBudgetTest.sql">
+      <Filter>DB Querys</Filter>
+    </None>
+    <None Include="InsertItemTest.sql">
+      <Filter>DB Querys</Filter>
+    </None>
+    <None Include="InsertSavingsTest.sql">
+      <Filter>DB Querys</Filter>
+    </None>
+    <None Include="InsertTransactionsTest.sql">
+      <Filter>DB Querys</Filter>
+    </None>
   </ItemGroup>
 </Project>

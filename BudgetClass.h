@@ -4,6 +4,7 @@
 #include <string>
 #include <exception>
 #include <vector>
+#include "headers\sqlite3.h"
 
 class Budget {
 private:
@@ -26,9 +27,24 @@ public:
 	Budget();
 
 	//Accessors
-	void getItems(std::string name) throw(std::invalid_argument);
-	void getTotal(std::string name) throw(std::invalid_argument);
-	void getBudgets() const;
+	void getItems(std::string name) throw(std::invalid_argument) {//Return item struct
+
+		//Data Fields
+		int choice = 0;//User menu choice.
+		sqlite3* db;//My database file.
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			std:: cout << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
+			sqlite3_close(db);
+		}
+		else {
+			std::cout << "Data base opened.\n";
+		}
+	}
+
+	void getTotal(std::string name) throw(std::invalid_argument);//Return double
+	void getBudgets() const;//Return string
 
 	//Mutators
 	void addBudget(std::string name, double total, std::vector<item>& items) throw(std::invalid_argument);

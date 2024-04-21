@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS budget(
 CREATE TABLE IF NOT EXISTS item(
 	item_id integer PRIMARY KEY,
 	item_name varchar(30) NOT NULL,
-	limit numeric(6,3) NOT NULL DEFAULT 0,
-	total numeric(6,3) NOT NULL DEFAULT 0
+	cap numeric(6,3) NOT NULL DEFAULT 0,
+	total numeric(6,3) NOT NULL DEFAULT 0,
+	budget_id integer REFERENCES budget(budget_id)
 );
 
 CREATE TABLE IF NOT EXISTS category(

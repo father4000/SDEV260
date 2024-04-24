@@ -1,10 +1,11 @@
 //Budget Class Header File
+#pragma once
 
 #include <iostream>
 #include <string>
 #include <exception>
 #include <vector>
-#include "headers\sqlite3.h"
+#include "sqlite3.h"
 
 class Budget {
 private:
@@ -62,173 +63,21 @@ private:
 			return 1;
 		}
 		else {
+			std::cout << "Simple Query Error: " << sqlite3_errmsg(db) << std::endl;
 			return 0;
 		}
 	}//End of simpleQuery.
 
-public:
-	//Structs
-	struct category {
-		double total = 0;
-		std::string name = "";//Name of category to add/alter.
-	};
-
-	struct item {
-		double total = 0;//Current amount of line item. Default 0.
-		double cap = 0;//Cap for budget line item. Default 0.
-		std::string name = "";//Name of budget line item to add.
-	};
-
-	//Constructor
-	Budget() {
-
-	}
-
-	//Accessors
-	std::vector<item> getItems(std::string name) throw(std::invalid_argument) {//Returns vector of item structs. Needs budget name.
-
-		//Data Fields
-		std::string query = "";//Query to send to database.
-		int budgetID = 0;//ID number for budget to get items from.
-		sqlite3* db;//My database file.
-		sqlite3_stmt* qres;//Results from rental id query
-		std::vector<item> items;//Vector of item structs to return.
-
-		//Checking name integrity.
-		if (name.size() == 0) {
-			throw std::invalid_argument("Name cannot be blank.\n");
-		}
-
-		//Opening database and checking for errors.
-		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
-			sqlite3_close(db);
-			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
-			throw std::invalid_argument(error);
-		}
-		else {
-			//Getting budget id.
-			budgetID = this->getBudgetID(name);
-
-			//Creating string query.
-			query = "SELECT item_name, cap, total FROM item WHERE budget_id = ";
-			query + std::to_string(budgetID) + "; ";
-
-			//Making query and checking for error.
-			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
-				sqlite3_finalize(qres);
-				std::string error = "There was an error in get budget names query. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
-				throw std::invalid_argument(error);
-			}
-			else {
-				//Filling in vector. Step into qres is in while loop.
-				while (sqlite3_step(qres) == SQLITE_ROW) {
-					item temp = item();
-					temp.name = reinterpret_cast<const char*>(sqlite3_column_text(qres, 0));
-					temp.cap = sqlite3_column_double(qres, 1);
-					temp.total = sqlite3_column_double(qres, 2);
-					items.push_back(temp);
-				}
-				sqlite3_finalize(qres);//Close result.
-			}
-			
-			//Closing database.
-			sqlite3_close(db);
-
-		}//End of main else.
-		return items;
-	}//End of getItems
-
-	double getTotal(std::string name) throw(std::invalid_argument) {//Returns double for budget total. Needs budget name.
+	//Returns budget id as a int. Needs budget name. Tested Working**************
+	int getBudgetID(std::string budgetName) throw(std::invalid_argument) {
 		//Data fields.
 		std::string query = "";//Query to send to database.
 		sqlite3* db;//My database file.
-		sqlite3_stmt* qres;//Results from rental id query.
-		double total = 0;//Total to send back.
-
-		//Checking name integrity.
-		if (name.size() == 0) {
-			throw std::invalid_argument("Name cannot be blank.\n");
-		}
-
-		//Opening database and checking for errors.
-		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
-			sqlite3_close(db);
-			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
-			throw std::invalid_argument(error);
-		}
-		else {
-			//Building query
-			query = "SELECT total FROM budget WHERE budget_name LIKE ";
-			query + name + "; ";
-
-			//Making query and checking for error.
-			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
-				sqlite3_finalize(qres);
-				std::string error = "There was an error in budget total query. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
-				throw std::invalid_argument(error);
-			}
-			else {
-				sqlite3_step(qres);//Step in.
-				total = sqlite3_column_double(qres, 0);//Set total from result
-				sqlite3_finalize(qres);//Close result.
-			}
-		}//End of main else.
-
-		//Closing database.
-		sqlite3_close(db);
-
-		return total;
-	}//End of getTotal
-
-	std::vector<std::string> getBudgets() {//Returns vector of strings that are budget names.
-		//Data fields
-		std::string query = "";//Query to send to database.
-		sqlite3* db;//My database file.
-		sqlite3_stmt* qres;//Results from rental id query.
-		std::vector<std::string> budgetList;//Vector of strings to return.
-
-		//Building query
-		query = "SELECT budget_name FROM budget; ";
-
-		//Making query and checking for error.
-		if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
-			sqlite3_finalize(qres);
-			std::string error = "There was an error in get budget names query. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
-			throw std::invalid_argument(error);
-		}
-		else {
-			//Filling in vector. Step into qres is in while loop.
-			while (sqlite3_step(qres) == SQLITE_ROW) {
-				budgetList.push_back((reinterpret_cast<const char*>(sqlite3_column_text(qres, 0))));
-			}
-			sqlite3_finalize(qres);//Close result.
-		}//End of main else.
-
-		//Closing database.
-		sqlite3_close(db);
-
-		return budgetList;
-	}//End of getBudgets
-
-	int getBudgetID(std::string name) throw(std::invalid_argument){//Returns budget id as a int. Needs budget name.
-		//Data fields.
-		std::string query = "";//Query to send to database.
-		sqlite3* db;//My database file.
-		sqlite3_stmt* qres;//Results from rental id query.
+		sqlite3_stmt* qres;//Results from query.
 		int id = 0;//Total to send back.
 
 		//Checking name integrity.
-		if (name.size() == 0) {
+		if (budgetName.size() == 0) {
 			throw std::invalid_argument("Name cannot be blank.\n");
 		}
 
@@ -236,21 +85,21 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
 			//Building query
-			query = "SELECT budget_id FROM budget WHERE budget_name LIKE ";
-			query + name + "; ";
+			query = "SELECT budget_id FROM budget WHERE budget_name LIKE '";
+			query += budgetName + "'; ";
 
 			//Making query and checking for error.
 			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
 				sqlite3_finalize(qres);
-				std::string error = "There was an error in budget total query. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
+				std::string error = "There was an error in budget id query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
 				throw std::invalid_argument(error);
 			}
 			else {
@@ -264,18 +113,19 @@ public:
 		sqlite3_close(db);
 
 		return id;
-	}
+	}//End of getBudgetID
 
-	std::vector<int> getItemIDList(std::string name) {//Returns a vector of item id's. Needs a budget name.
+	//Returns a vector of item id's. Needs a budget name. Tested Working**************
+	std::vector<int> getItemIDList(std::string budgetName) {
 		//Data fields.
 		std::string query = "";//Query to send to database.
 		sqlite3* db;//My database file.
-		sqlite3_stmt* qres;//Results from rental id query.
+		sqlite3_stmt* qres;//Results from query.
 		std::vector<int> idList;//List of id numbers to send back.
 		int budgetID = 0;//ID of budget we are working with.
 
 		//Checking name integrity.
-		if (name.size() == 0) {
+		if (budgetName.size() == 0) {
 			throw std::invalid_argument("Name cannot be blank.\n");
 		}
 
@@ -283,24 +133,24 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
 			//Getting budget id number.
-			budgetID = this->getBudgetID(name);
+			budgetID = this->getBudgetID(budgetName);
 
 			//Building query
 			query = "SELECT item_id FROM item WHERE budget_id = ";
-			query + std::to_string(budgetID) + "; ";
+			query += std::to_string(budgetID) + "; ";
 
 			//Making query and checking for error.
 			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
 				sqlite3_finalize(qres);
-				std::string error = "There was an error in budget total query. ";
-				//error + sqlite3_errmsg(db);
-				//error + "\n";
+				std::string error = "There was an error in item id list query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
 				throw std::invalid_argument(error);
 			}
 			else {
@@ -309,20 +159,21 @@ public:
 					idList.push_back(sqlite3_column_int(qres, 0));
 				}
 			}
-				sqlite3_finalize(qres);//Close result.
+			sqlite3_finalize(qres);//Close result.
 		}//End of main else.
 
 		//Closing database.
 		sqlite3_close(db);
-		
+
 		return idList;
 	}//End of getItemIDList
 
-	int getItemID(std::string itemName) {//Returns a id number for item.
+	//Returns a id number for item. Tested Working**********
+	int getItemID(std::string itemName) {
 		//Data fields.
 		std::string query = "";//Query to send to database.
 		sqlite3* db;//My database file.
-		sqlite3_stmt* qres;//Results from rental id query.
+		sqlite3_stmt* qres;//Results from query.
 		int id = 0;//Total to send back.
 
 		//Checking name integrity.
@@ -340,9 +191,8 @@ public:
 		}
 		else {
 			//Building query
-			query = "SELECT item_id FROM item WHERE item_name LIKE ";
-			query + itemName + "; ";
-
+			query = "SELECT item_id FROM item WHERE item_name LIKE '";
+			query += itemName + "'; ";
 			//Making query and checking for error.
 			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
 				sqlite3_finalize(qres);
@@ -364,8 +214,460 @@ public:
 		return id;
 	}//End of getItemID
 
+public:
+	//Structs
+	struct category {
+		double total = 0;
+		std::string name = "";//Name of category to add/alter.
+	};
+
+	struct item {
+		double total = 0;//Current amount of line item. Default 0.
+		double cap = 0;//Cap for budget line item. Default 0.
+		std::string name = "";//Name of budget line item to add.
+	};
+
+	//Constructor
+	Budget() {
+
+	}
+
+	//Destructor
+	~Budget() {
+
+	}
+
+	//Accessors
+	//Returns double for budget total. Needs budget name. Tested Working*********
+	double getBudgetTotal(std::string budgetName) throw(std::invalid_argument) {
+		//Data fields.
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		double total = 0;//Total to send back.
+
+		//Checking name integrity.
+		if (budgetName.size() == 0) {
+			throw std::invalid_argument("Name cannot be blank.\n");
+		}
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Building query
+			query = "SELECT total FROM budget WHERE budget_name LIKE '";
+			query += budgetName + "'; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in budget total query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				sqlite3_step(qres);//Step in.
+				total = sqlite3_column_double(qres, 0);//Set total from result
+				sqlite3_finalize(qres);//Close result.
+			}
+		}//End of main else.
+
+		//Closing database.
+		sqlite3_close(db);
+
+		return total;
+	}//End of getTotal
+
+	//Returns double for category total. Needs category name. Tested Working***********
+	double getCategoryTotal(std::string categoryName) throw(std::invalid_argument) {
+		//Data fields.
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		double total = 0;//Total to send back.
+
+		//Checking name integrity.
+		if (categoryName.size() == 0) {
+			throw std::invalid_argument("Name cannot be blank.\n");
+		}
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Building query
+			query = "SELECT total FROM category WHERE cat_name LIKE '";
+			query += categoryName + "'; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in category total query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				sqlite3_step(qres);//Step in.
+				total = sqlite3_column_double(qres, 0);//Set total from result
+				sqlite3_finalize(qres);//Close result.
+			}
+		}//End of main else.
+
+		//Closing database.
+		sqlite3_close(db);
+
+		return total;
+	}//End of getTotal
+
+	//Returns double for item total. Needs item name. Tested Working******
+	double getItemTotal(std::string itemName) throw(std::invalid_argument) {
+		//Data fields.
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		double total = 0;//Total to send back.
+
+		//Checking name integrity.
+		if (itemName.size() == 0) {
+			throw std::invalid_argument("Name cannot be blank.\n");
+		}
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Building query
+			query = "SELECT total FROM item WHERE item_name LIKE '";
+			query += itemName + "'; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in item total query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				sqlite3_step(qres);//Step in.
+				total = sqlite3_column_double(qres, 0);//Set total from result
+				sqlite3_finalize(qres);//Close result.
+			}
+		}//End of main else.
+
+		//Closing database.
+		sqlite3_close(db);
+
+		return total;
+	}//End of getTotal
+
+	//Returns double for item cap. Needs item name. Tested Working******
+	double getItemCap(std::string itemName) throw(std::invalid_argument) {
+		//Data fields.
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		double cap = 0;//Cap to send back.
+
+		//Checking name integrity.
+		if (itemName.size() == 0) {
+			throw std::invalid_argument("Name cannot be blank.\n");
+		}
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Building query
+			query = "SELECT cap FROM item WHERE item_name LIKE '";
+			query += itemName + "'; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in item cap query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				sqlite3_step(qres);//Step in.
+				cap = sqlite3_column_double(qres, 0);//Set total from result
+				sqlite3_finalize(qres);//Close result.
+			}
+		}//End of main else.
+
+		//Closing database.
+		sqlite3_close(db);
+
+		return cap;
+	}//End of getTotal
+
+	//Returns vector of strings that are budget names. Tested Working********************
+	std::vector<std::string> getBudgetList() {
+		//Data fields
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		std::vector<std::string> budgetList;//Vector of strings to return.
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Building query
+			query = "SELECT budget_name FROM budget; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in get budget names list query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				//Filling in vector. Step into qres is in while loop.
+				while (sqlite3_step(qres) == SQLITE_ROW) {
+					budgetList.push_back((reinterpret_cast<const char*>(sqlite3_column_text(qres, 0))));
+				}
+				sqlite3_finalize(qres);//Close result.
+			}//End of main else.
+
+			//Closing database.
+			sqlite3_close(db);
+		}//End of main else.
+		return budgetList;
+	}//End of getBudgets
+
+	//Returns a list of category name strings. Needs a budget name.  Tested Working************
+	std::vector<std::string> getCategoryList(std::string budgetName) throw(std::invalid_argument) {
+		//Data fields
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		std::vector<std::string> categoryList;//Vector of strings to return.
+		int budgetID = 0;//ID number of budget.
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Getting budget id.
+			budgetID = this->getBudgetID(budgetName);
+
+			//Building query
+			query = "SELECT cat_name FROM category WHERE budget_id = " + std::to_string(budgetID) + "; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in get category names list query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				//Filling in vector. Step into qres is in while loop.
+				while (sqlite3_step(qres) == SQLITE_ROW) {
+					categoryList.push_back((reinterpret_cast<const char*>(sqlite3_column_text(qres, 0))));
+				}
+				sqlite3_finalize(qres);//Close result.
+			}//End of main else.
+
+			//Closing database.
+			sqlite3_close(db);
+		}//End of main else.
+		return categoryList;
+	}//End of getCategoryList
+
+	//Returns vector of item structs. Needs budget name. Tested Working****************
+	std::vector<item> getItemList(std::string budgetName) throw(std::invalid_argument) {
+
+		//Data Fields
+		std::string query = "";//Query to send to database.
+		int budgetID = 0;//ID number for budget to get items from.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		std::vector<item> items;//Vector of item structs to return.
+
+		//Checking name integrity.
+		if (name.size() == 0) {
+			throw std::invalid_argument("Name cannot be blank.\n");
+		}
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Getting budget id.
+			budgetID = this->getBudgetID(budgetName);
+
+			//Creating string query.
+			query = "SELECT item_name, cap, total FROM item WHERE budget_id = ";
+			query += std::to_string(budgetID) + "; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in get item names list query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				//Filling in vector. Step into qres is in while loop.
+				while (sqlite3_step(qres) == SQLITE_ROW) {
+					item temp = item();
+					temp.name = reinterpret_cast<const char*>(sqlite3_column_text(qres, 0));
+					temp.cap = sqlite3_column_double(qres, 1);
+					temp.total = sqlite3_column_double(qres, 2);
+					items.push_back(temp);
+				}
+				sqlite3_finalize(qres);//Close result.
+			}
+
+			//Closing database.
+			sqlite3_close(db);
+
+		}//End of main else.
+		return items;
+	}//End of getItems
+
+	//Returns vector of doubles that are transaction amounts. Needs a budget name. Tested Working********************
+	std::vector<double> getBudgetTransactionsList(std::string budgetName) {
+		//Data fields
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		std::vector<int> itemIDList;//List of item id numbers.
+		std::vector<double> transactionList;//Vector of doubles to return.
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Getting list of item id numbers that belong to this budget.
+			itemIDList = this->getItemIDList(budgetName);
+
+			for (int i = 0; i < itemIDList.size(); i++) {
+				//Building query
+				query = "SELECT total FROM transactions WHERE item_id = " + std::to_string(itemIDList[i]) + "; ";
+
+				//Making query and checking for error.
+				if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+					sqlite3_finalize(qres);
+					std::string error = "There was an error in get budget transactions list query. ";
+					error += sqlite3_errmsg(db);
+					error += "\n";
+					throw std::invalid_argument(error);
+				}
+				else {
+					//Filling in vector. Step into qres is in while loop.
+					while (sqlite3_step(qres) == SQLITE_ROW) {
+						transactionList.push_back(sqlite3_column_double(qres, 0));
+					}
+					sqlite3_finalize(qres);//Close result.
+				}//End of second else.
+			}//End of for loop.
+
+			//Closing database.
+			sqlite3_close(db);
+		}//End of main else.
+		return transactionList;
+	}//End of getBudgets
+
+	//Returns vector of doubles that are transaction amounts. Needs a item name. Tested Working********************
+	std::vector<double> getItemTransactionsList(std::string itemName) {
+		//Data fields
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		std::vector<double> transactionList;//Vector of doubles to return.
+		int itemID = 0;//ID number of item.
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Getting item id number.
+			itemID = this->getItemID(itemName);
+
+			//Building query
+			query = "SELECT total FROM transactions WHERE item_id = " + std::to_string(itemID) + "; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in get item transactions list query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				//Filling in vector. Step into qres is in while loop.
+				while (sqlite3_step(qres) == SQLITE_ROW) {
+					transactionList.push_back(sqlite3_column_double(qres, 0));
+				}
+				sqlite3_finalize(qres);//Close result.
+			}//End of second else.
+			//Closing database.
+			sqlite3_close(db);
+		}//End of main else.
+		return transactionList;
+	}//End of getBudgets
+
 	//Mutators
-	void addBudget(std::string name, double total, std::vector<item>& items) throw(std::invalid_argument) {
+	//Needs a budget name, budget starting total, and vector of items. Tested Working*************
+	void addBudget(std::string budgetName, double total, std::vector<item>& items) throw(std::invalid_argument) {
 		//Data fields
 		std::string dataBaseString = "";//String being used for database statement.
 		sqlite3* db;//My database file.
@@ -374,13 +676,13 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
 			try {
-				if (name.empty()) {
+				if (budgetName.empty()) {
 					throw std::invalid_argument("Name cannot be empty.\n");
 				}
 				if (total < 0) {
@@ -391,19 +693,15 @@ public:
 				throw e.what();
 			}
 
-			//Starting transaction.
-			this->startTransaction(db);
-
 			//Building statement for budget name and starting total.
-			dataBaseString = "INSERT INTO budget (budget_name, total) VALUES ('";
-			dataBaseString + name + "', " + std::to_string(total);
-			dataBaseString + "); ";
-
+			dataBaseString = "INSERT INTO budget (budget_name, total) VALUES('";
+			dataBaseString += budgetName + "', " + std::to_string(total);
+			dataBaseString += "); ";
 			//Inserting into budget table.
 			if (this->simpleQuery(db, dataBaseString) == 0) {
 				std::string error = "There was an error inserting into budget table. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
+				error += sqlite3_errmsg(db);
+				error += "\n";
 				throw std::invalid_argument(error);
 				rollback(db);
 			}
@@ -425,29 +723,26 @@ public:
 			for (int i = 0; i < items.size(); i++) {
 				//Building string for budget item insertion.
 				dataBaseString = "INSERT INTO item (item_name, cap, total, budget_id) VALUES('";
-				dataBaseString + items[i].name + "', ";
-				dataBaseString + std::to_string(items[i].cap) + ", ";
-				dataBaseString + std::to_string(items[i].total) + ", ";
-				dataBaseString + std::to_string(this->getBudgetID(name)) + ");";
-
+				dataBaseString += items[i].name + "', ";
+				dataBaseString += std::to_string(items[i].cap) + ", ";
+				dataBaseString += std::to_string(items[i].total) + ", ";
+				dataBaseString += std::to_string(this->getBudgetID(budgetName)) + ");";
 				//Inserting new item into item table.
 				if (this->simpleQuery(db, dataBaseString) == 0) {
 					std::string error = "There was an error inserting into item table. ";
-					error + sqlite3_errmsg(db);
-					error + "\n";
+					error += sqlite3_errmsg(db);
+					error += "\n";
 					throw std::invalid_argument(error);
 					rollback(db);
 				}
 			}
-
-			//Commiting changes.
-			this->commit(db);
 
 			//Closing database.
 			sqlite3_close(db);
 		}//End of main else.
 	}//End of addBudget
 
+	//Needs a budget name. Tested Working**************
 	void deleteBudget(std::string name) throw(std::invalid_argument) {
 		//Data fields
 		std::string statement = "";//String being used for database statement.
@@ -464,8 +759,8 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
@@ -482,15 +777,22 @@ public:
 			for (int i = 0; i < itemIDList.size(); i++) {
 				//Building statement
 				statement = "UPDATE transactions SET item_id = NULL WHERE item_id = ";
-				statement + std::to_string(itemIDList[i]) + "; ";
+				statement += std::to_string(itemIDList[i]) + "; ";
 
 				//Sending statement to database.
 				this->simpleQuery(db, statement);
 			}
 
 			//Building statement to delete all related budget items.
-			statement = "DELETE FROM items WHERE budget_id = ";
-			statement + std::to_string(budgetID) + "; ";
+			statement = "DELETE FROM item WHERE budget_id = ";
+			statement += std::to_string(budgetID) + "; ";
+
+			//Deleting items from database.
+			this->simpleQuery(db, statement);
+
+			//Building statement to delete budget.
+			statement = "DELETE FROM budget WHERE budget_id = ";
+			statement += std::to_string(budgetID) + "; ";
 
 			//Deleting items from database.
 			this->simpleQuery(db, statement);
@@ -502,7 +804,8 @@ public:
 		sqlite3_close(db);
 	}//End of deleteBudget
 
-	void addItem(std::string name, item newItem) throw(std::invalid_argument) {
+	//Needs a budget name and item struct. Tested Working*****************
+	void addItem(std::string budgetName, item newItem) throw(std::invalid_argument) {
 		//Datafields
 		std::string statement = "";//String being used for database statement.
 		sqlite3* db;//My database file.
@@ -511,20 +814,23 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
 			try {//Checking data integrity.
 				if (newItem.name.empty()) {
-					throw std::invalid_argument("Name cannot be empty.\n");
+					throw std::invalid_argument("Item name cannot be empty.\n");
 				}
 				if (newItem.cap < 0) {
 					throw std::invalid_argument("Cap cannot be a negative number.\n");
 				}
 				if (newItem.total < 0) {
 					throw std::invalid_argument("Total cannot be a negative number.\n");
+				}
+				if (budgetName.empty()) {
+					throw std::invalid_argument("Budget name cannot be empty..\n");
 				}
 			}
 			catch (std::invalid_argument& e) {
@@ -533,14 +839,18 @@ public:
 		}//End of check and database opening else.
 
 		//Build insertion string.
-		statement = "INSERT INTO item (item_name, cap, total, budget_id) VALUES (";
-		statement + newItem.name + ", " + std::to_string(newItem.cap) + ", " + std::to_string(newItem.total) + "); ";
+		statement = "INSERT INTO item (item_name, cap, total, budget_id) VALUES ('";
+		statement += newItem.name + "', " + std::to_string(newItem.cap) + ", " + std::to_string(newItem.total) + ", " + std::to_string(this->getBudgetID(budgetName)) + "); ";
 
 		//Inserting new item.
 		this->simpleQuery(db, statement);
+
+		//Closing database
+		sqlite3_close(db);
 	}//End of addItem
 
-	void deleteItem(std::string itemName) throw(std::invalid_argument) {//Deletes item from table and sets all related transactions to NULL item_id. Needs item name.
+	//Deletes item from table and sets all related transactions to NULL item_id. Needs item name. Tested Working*****************
+	void deleteItem(std::string itemName) throw(std::invalid_argument) {
 		//Datafields
 		std::string statement = "";//String being used for database statement.
 		sqlite3* db;//My database file.
@@ -555,8 +865,8 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
@@ -584,7 +894,8 @@ public:
 		}//End of main else.
 	}//End of deleteItem
 
-	void addFunds(std::string name, double amount) throw(std::invalid_argument) {//Adds funds to total of a budget. Needs budget name and amount to add.
+	//Adds funds to total of a budget. Needs budget name and amount to add. Test Working***************
+	void addFunds(std::string name, double amount) throw(std::invalid_argument) {
 		//Data fields.
 		std::string statement = "";//String being used for database statement.
 		sqlite3* db;//My database file.
@@ -603,8 +914,8 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
@@ -614,9 +925,9 @@ public:
 			//Making query and checking for error.
 			if (sqlite3_prepare_v2(db, statement.c_str(), -1, &qres, NULL) != SQLITE_OK) {
 				sqlite3_finalize(qres);
-				std::string error = "There was an error in item id query. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
+				std::string error = "There was an error in add funds query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
 				throw std::invalid_argument(error);
 			}
 			else {
@@ -636,7 +947,8 @@ public:
 		}//End of main else
 	}//End of addFunds
 
-	void addExpense(std::string catName, std::string itemName, std::string budgetName, double amount) throw(std::invalid_argument) {//Adds a transaction. Needs a category name, item name, budget name, and amount of transaction.
+	//Adds a transaction. Needs a category name, item name, budget name, and amount of transaction. Tested Working***************
+	void addExpense(std::string catName, std::string itemName, std::string budgetName, double amount) throw(std::invalid_argument) {
 		//Data fields.
 		std::string statement = "";//String being used for database statement.
 		sqlite3* db;//My database file.
@@ -660,8 +972,8 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
@@ -673,9 +985,9 @@ public:
 			//Making query and checking for error.
 			if (sqlite3_prepare_v2(db, statement.c_str(), -1, &qres, NULL) != SQLITE_OK) {
 				sqlite3_finalize(qres);
-				std::string error = "There was an error in item id query. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
+				std::string error = "There was an error in add expense/budget total query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
 				throw std::invalid_argument(error);
 			}
 			else {
@@ -690,9 +1002,9 @@ public:
 			//Making query and checking for error.
 			if (sqlite3_prepare_v2(db, statement.c_str(), -1, &qres, NULL) != SQLITE_OK) {
 				sqlite3_finalize(qres);
-				std::string error = "There was an error in item id query. ";
-				error + sqlite3_errmsg(db);
-				error + "\n";
+				std::string error = "There was an error in add expense/ item total query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
 				throw std::invalid_argument(error);
 				return;
 			}
@@ -706,15 +1018,15 @@ public:
 			this->startTransaction(db);
 
 			//Building statement to update budget total and sending to database.
-			statement = "UPDATE budget SET total = " + std::to_string(currentBudgetTotal - amount) + "; ";
+			statement = "UPDATE budget SET total = " + std::to_string(currentBudgetTotal - amount) + " WHERE budget_name LIKE '" + budgetName + "'; ";
 			this->simpleQuery(db, statement);
 
 			//Building statement to update item total and sending to database.
-			statement = "UPDATE item SET total = " + std::to_string(currentItemTotal + amount) + "; ";
+			statement = "UPDATE item SET total = " + std::to_string(currentItemTotal + amount) + " WHERE item_id = " + std::to_string(itemID) + "; ";
 			this->simpleQuery(db, statement);
 
 			//Building statement to add transaction and sending to database.
-			statement = "INSERT INTO transactions (total, item_id, sav_id, cat_name) VALUES ( " + std::to_string(amount) + ", " + std::to_string(itemID) + ", NULL, '" + catName + "'); ";
+			statement = "INSERT INTO transactions (total, item_id, sav_id, cat_name) VALUES (" + std::to_string(amount) + ", " + std::to_string(itemID) + ", NULL, '" + catName + "'); ";
 			this->simpleQuery(db, statement);
 
 			//Commiting changes and closing database.
@@ -723,7 +1035,8 @@ public:
 		}//End of main else.
 	}//End of addExpense
 
-	void addCategory(std::string catName, std::string budgetName) throw(std::invalid_argument) {//Adds a category. Needs a category name and a budget name it belongs to.
+	//Adds a category. Needs a category name and a budget name it belongs to.
+	void addCategory(std::string catName, std::string budgetName) throw(std::invalid_argument) {
 		//Data fields
 		std::string statement = "";//String being used for database statement.
 		sqlite3* db;//My database file.
@@ -741,8 +1054,8 @@ public:
 		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
 			sqlite3_close(db);
 			std::string error = "Error opening database. ";
-			error + sqlite3_errmsg(db);
-			error + "\n";
+			error += sqlite3_errmsg(db);
+			error += "\n";
 			throw std::invalid_argument(error);
 		}
 		else {
@@ -758,8 +1071,34 @@ public:
 		}//End of main else.
 	}//End of addCategory
 
+	//Deletes a category. Needs a category name. Tested Working*************
+	void deleteCategory(std::string catName) throw(std::invalid_argument) {
+		//Data fields
+		std::string statement = "";//String being used for database statement.
+		sqlite3* db;//My database file.
+		int budgetID = 0;//ID number of budget.
 
-	void deleteCategory(std::string name) throw(std::invalid_argument);
-	void getCategoryList(std::string name) throw(std::invalid_argument);
+		//Checking data integrity.
+		if (catName.size() == 0) {
+			throw std::invalid_argument("Catagory name cannot be blank.\n");
+		}
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Building statement to delete category.
+			statement = "DELETE FROM category WHERE cat_name LIKE '" + catName + "'; ";
+			this->simpleQuery(db, statement);
+
+			//Closing database
+			sqlite3_close(db);
+		}//End of main else.
+	}//End of deleteCategory
 
 };//End of class

@@ -262,6 +262,53 @@ public:
 		return savingsList;
 	}//End of getSavingsList
 
+	//Returns vector of doubles that are transaction amounts. Needs a savings name. Tested Working********************
+	std::vector<double> getSavingsTransactionsList(std::string savingsName) {
+		//Data fields
+		std::string query = "";//Query to send to database.
+		sqlite3* db;//My database file.
+		sqlite3_stmt* qres;//Results from query.
+		std::vector<double> transactionList;//Vector of doubles to return.
+		int savingsID = 0;//ID number of savings.
+
+		//Opening database and checking for errors.
+		if (sqlite3_open_v2("dataBase.db", &db, SQLITE_OPEN_READWRITE, NULL) != SQLITE_OK) {
+			sqlite3_close(db);
+			std::string error = "Error opening database. ";
+			error += sqlite3_errmsg(db);
+			error += "\n";
+			throw std::invalid_argument(error);
+		}
+		else {
+			//Getting savings ID number.
+			savingsID = this->getSavingsID(savingsName);
+
+			//Building query
+			query = "SELECT total FROM transactions WHERE sav_id = " + std::to_string(savingsID) + "; ";
+
+			//Making query and checking for error.
+			if (sqlite3_prepare_v2(db, query.c_str(), -1, &qres, NULL) != SQLITE_OK) {
+				sqlite3_finalize(qres);
+				std::string error = "There was an error in get budget transactions list query. ";
+				error += sqlite3_errmsg(db);
+				error += "\n";
+				throw std::invalid_argument(error);
+			}
+			else {
+				//Filling in vector. Step into qres is in while loop.
+				while (sqlite3_step(qres) == SQLITE_ROW) {
+					transactionList.push_back(sqlite3_column_double(qres, 0));
+				}
+				sqlite3_finalize(qres);//Close result.
+			}//End of second else.
+
+
+			//Closing database.
+			sqlite3_close(db);
+		}//End of main else.
+		return transactionList;
+	}//End of getBudgets
+
 	//Mutators
 	//Deletes a savings after setting all related transactions to sav_id = NULL. Needs a savings name. Tested Working**************
 	void deleteSavings(std::string savingsName) throw(std::invalid_argument) {
